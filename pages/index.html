@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Wave generator output</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-+0n0xVW2eSR5OomGNYDnhzAbDsOXxcvSN1TPprVMTNDbiYZCxYbOOl7+AMvyTG2x" crossorigin="anonymous">
+    <style>
+        pre { background-color: #eee; margin: 1rem 0; font-size: 80%; padding: 0.5rem 1rem; }
+        .example { margin: 2rem 0 3rem 0; font-size: 90%; }
+        .example .content { padding-left: 1rem; border-left: 0.3rem solid #eee; margin-left: 0.3rem; }
+        audio { width: 100%; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="navbar navbar-dark bg-dark shadow-sm">
+        <div class="container">
+            <a href="#" class="navbar-brand d-flex align-items-center">
+                ∿ &nbsp;
+                <strong>wave generator</strong>
+            </a>
+            <a style="color: white; text-decoration: none;" href="https://github.com/analogic/wave-generator"><span class="d-none d-sm-inline">View on GitHub </span><svg version="1.1" width="16" height="16" viewBox="0 0 16 16" class="octicon octicon-mark-github" aria-hidden="true"><path fill-rule="evenodd" fill="#ffffff" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"></path></svg></a>
+        </div>
+    </div>
+</header>
+
+<main>
+    <div class="container">
+        <br />
+        <p>
+        Simple LUT(lookup table) MCU friendly library for generating waves. Main target is generating sound for NRF52 via I2S amplifier but given a nature of library it should work as hardware independent in more generic projects. Since sample rate is fixed, do not use it as dependency (it might change in breaking way) just copy this library and adjust code as you need.
+        </p>
+
+         <div class="example">
+    <h1>Example frequency.cpp</h1>
+    <div class="content">
+        <img src="frequency.cpp.png" style="width: 100%;"/>
+        <audio controls>
+            <source src="frequency.cpp.wav" type="audio/wav">
+        </audio>
+        <pre><code>// Smooth frequency change
+
+#include &lt;stdio.h&gt;
+#include &lt;lut.h&gt;
+
+#define BUFF_SIZE 16384
+#define TONE_A4 440
+#define TONE_A6 1760
+
+extern void write_as_wav(uint32_t *buffer, uint32_t size, char *path);
+
+int main(int argc, char** argv)
+{
+    lut_pregenerate();
+    static uint32_t buff[BUFF_SIZE];    // output buffer
+
+    lut_transform(&amp;buff[0], BUFF_SIZE, TONE_A4, TONE_A6, 255);
+
+    for(int i = 0; i &lt; BUFF_SIZE; i++) {
+        printf(&quot;%d\t%d\n&quot;, i, ((int16_t *)buff)[i * 2]);
+    }
+
+    if (argc &gt; 1) {
+        write_as_wav(&amp;buff[0], BUFF_SIZE, argv[1]);
+    }
+}</code></pre>
+    </div>
+</div> <div class="example">
+    <h1>Example sm-coin.cpp</h1>
+    <div class="content">
+        <img src="sm-coin.cpp.png" style="width: 100%;"/>
+        <audio controls>
+            <source src="sm-coin.cpp.wav" type="audio/wav">
+        </audio>
+        <pre><code>// Generated Super Mario coin sound effect
+
+#include &lt;stdio.h&gt;
+#include &lt;lut.h&gt;
+
+#define BUFF_SIZE 33333 // same as SAMPLE_RATE
+#define ZERO_TRANSITION 100
+
+extern void write_as_wav(uint32_t *buffer, uint32_t size, char *path);
+
+int main(int argc, char** argv)
+{
+    lut_pregenerate();
+    static uint32_t buff[BUFF_SIZE];    // output buffer
+
+    lut_square_tone(&amp;buff[0], BUFF_SIZE / 10, 988, 255);
+    lut_square_tone(&amp;buff[BUFF_SIZE / 10], BUFF_SIZE / 10 * 7, 1319, 255);
+
+    lut_adjust_volume(&amp;buff[0], ZERO_TRANSITION, 0, 255);
+    lut_adjust_volume(&amp;buff[BUFF_SIZE / 10], BUFF_SIZE / 10 * 7, 255, 0);
+
+    for(int i = 0; i &lt; BUFF_SIZE; i++) {
+        printf(&quot;%d\t%d\n&quot;, i, ((int16_t *)buff)[i * 2]);
+    }
+
+    if (argc &gt; 1) {
+        write_as_wav(&amp;buff[0], BUFF_SIZE, argv[1]);
+    }
+}</code></pre>
+    </div>
+</div> <div class="example">
+    <h1>Example sm-kick.cpp</h1>
+    <div class="content">
+        <img src="sm-kick.cpp.png" style="width: 100%;"/>
+        <audio controls>
+            <source src="sm-kick.cpp.wav" type="audio/wav">
+        </audio>
+        <pre><code>// Generated Super Mario kick sound effect
+
+#include &lt;stdio.h&gt;
+#include &lt;lut.h&gt;
+
+#define BUFF_SIZE 33333 // same as SAMPLE_RATE
+
+extern void write_as_wav(uint32_t *buffer, uint32_t size, char *path);
+
+int main(int argc, char** argv)
+{
+    lut_pregenerate();
+    static uint32_t buff[BUFF_SIZE];    // output buffer
+
+    int slength = BUFF_SIZE/50; // 20ms
+    int sdelay = slength * 4; // 80ms
+
+    lut_square_tone(&amp;buff[BUFF_SIZE / 10], slength, 500, 255);
+    lut_square_tone(&amp;buff[BUFF_SIZE / 10] + slength + sdelay, slength, 693, 255);
+
+    for(int i = 0; i &lt; BUFF_SIZE; i++) {
+        printf(&quot;%d\t%d\n&quot;, i, ((int16_t *)buff)[i * 2]);
+    }
+
+    if (argc &gt; 1) {
+        write_as_wav(&amp;buff[0], BUFF_SIZE, argv[1]);
+    }
+}</code></pre>
+    </div>
+</div> <div class="example">
+    <h1>Example tone.cpp</h1>
+    <div class="content">
+        <img src="tone.cpp.png" style="width: 100%;"/>
+        <audio controls>
+            <source src="tone.cpp.wav" type="audio/wav">
+        </audio>
+        <pre><code>// Simple tone generation, since lib save phase to the state internally there should be uninterrupted wave
+
+#include &lt;stdio.h&gt;
+#include &lt;lut.h&gt;
+
+#define BUFF_SIZE 4096
+#define TONE_A 440
+
+extern void write_as_wav(uint32_t *buffer, uint32_t size, char *path);
+
+int main(int argc, char** argv)
+{
+    lut_pregenerate();
+    static uint32_t buff[BUFF_SIZE];    // output buffer
+
+    lut_tone(&amp;buff[0], (uint32_t)400, TONE_A, 255);
+    lut_tone(&amp;buff[400], BUFF_SIZE/4, TONE_A, 255);
+    lut_tone(&amp;buff[BUFF_SIZE/4 + 400], BUFF_SIZE/4, TONE_A, 255);
+    lut_tone(&amp;buff[BUFF_SIZE/4 * 2 + 400], BUFF_SIZE/4, TONE_A, 255);
+
+    for(int i = 0; i &lt; BUFF_SIZE; i++) {
+        printf(&quot;%d\t%d\n&quot;, i, ((int16_t *)buff)[i * 2]);
+    }
+
+    if (argc &gt; 1) {
+        write_as_wav(&amp;buff[0], BUFF_SIZE, argv[1]);
+    }
+}</code></pre>
+    </div>
+</div> <div class="example">
+    <h1>Example volume.cpp</h1>
+    <div class="content">
+        <img src="volume.cpp.png" style="width: 100%;"/>
+        <audio controls>
+            <source src="volume.cpp.wav" type="audio/wav">
+        </audio>
+        <pre><code>// Click-free wave - smooth transition from/to zero with volume adjustment function
+
+#include &lt;stdio.h&gt;
+#include &lt;lut.h&gt;
+
+#define BUFF_SIZE 4096
+#define TONE_A4 440
+#define TONE_A6 1760
+
+extern void write_as_wav(uint32_t *buffer, uint32_t size, char *path);
+
+int main(int argc, char** argv)
+{
+    lut_pregenerate();
+    static uint32_t buff[BUFF_SIZE];    // output buffer
+
+    lut_transform(&amp;buff[0], BUFF_SIZE, TONE_A4, TONE_A6, 255);
+
+    lut_adjust_volume(&amp;buff[0], BUFF_SIZE / 8, 0, 255);
+    lut_adjust_volume(&amp;buff[BUFF_SIZE - BUFF_SIZE / 8], BUFF_SIZE / 8, 255, 0);
+
+    for(int i = 0; i &lt; BUFF_SIZE; i++) {
+        printf(&quot;%d\t%d\n&quot;, i, ((int16_t *)buff)[i * 2]);
+    }
+
+    if (argc &gt; 1) {
+        write_as_wav(&amp;buff[0], BUFF_SIZE, argv[1]);
+    }
+}</code></pre>
+    </div>
+</div>
+    </div>
+</main>
+
+</body>
