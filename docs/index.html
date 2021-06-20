@@ -32,7 +32,7 @@
     <div class="container">
         <br />
         <p>
-        Simple LUT(lookup table) MCU friendly library for generating waves. Main target is generating sound for NRF52 via I2S amplifier but given a nature of library it should work as hardware independent in more generic projects. Since sample rate is fixed, do not use it as dependency (it might change in breaking way) just copy this library and adjust code as you need.
+        Simple LUT(lookup table) MCU friendly library for generating waves. Main target is generating sound for NRF52 via I2S amplifier but given a nature of library it should work as hardware independent in more generic projects. Right now whole code is fixed to sample rate 16.6Khz, we use left channel only and 8 bit sample width. Please do not use it as dependency (it might change in breaking way) just copy this library and adjust code as you need.
         </p>
 
          <div class="example">
@@ -135,16 +135,10 @@ int main(int argc, char** argv)
 
     int start = BUFF_SIZE/4; // 100ms
     int slength = BUFF_SIZE/50; // 20ms
-    int smooth = BUFF_SIZE/500; // 2ms
     int sdelay = slength * 4; // 80ms
 
     lut_square_tone(&amp;buff[start + BUFF_SIZE / 10], slength, 500, 255);
-  //  lut_adjust_volume(&amp;buff[start + BUFF_SIZE / 10], smooth, 0, 255);
-  //  lut_adjust_volume(&amp;buff[start + BUFF_SIZE / 10 + slength - smooth], smooth, 255, 0);
-
     lut_square_tone(&amp;buff[start + BUFF_SIZE / 10] + slength + sdelay, slength, 693, 255);
-  //  lut_adjust_volume(&amp;buff[start + BUFF_SIZE / 10] + slength + sdelay, smooth, 0, 255);
-  //  lut_adjust_volume(&amp;buff[start + BUFF_SIZE / 10 + slength + sdelay + slength - smooth], smooth, 255, 0);
 
     for(int i = 0; i &lt; BUFF_SIZE; i++) {
         printf(&quot;%d\t%d\n&quot;, i, ((uint8_t *)buff)[i * 2]);
