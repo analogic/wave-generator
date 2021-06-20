@@ -5,7 +5,7 @@
 #include <fstream>
 #include <iostream>
 
-#define SAMPLE_RATE 33333
+#define SAMPLE_RATE 16666
 
 namespace little_endian_io
 {
@@ -19,7 +19,7 @@ namespace little_endian_io
 }
 using namespace little_endian_io;
 
-void write_as_wav(uint32_t *buffer, uint32_t size, char *path)
+void write_as_wav(uint16_t *buffer, uint32_t size, char *path)
 {
     std::ofstream f( path);
 
@@ -29,17 +29,20 @@ void write_as_wav(uint32_t *buffer, uint32_t size, char *path)
     write_word( f,      1, 2 );  // PCM - integer samples
     write_word( f,      2, 2 );  // two channels (stereo file)
     write_word( f,  SAMPLE_RATE, 4 );  // samples per second (Hz)
-    write_word( f, (SAMPLE_RATE * 16 * 2), 4);  // (Sample Rate * BitsPerSample * Channels) / 8
-    write_word( f,      4, 2 );  // data block size (size of two integer samples, one for each channel, in bytes)
-    write_word( f,     16, 2 );  // number of bits per sample (use a multiple of 8)
+    write_word( f, (SAMPLE_RATE * 8 * 2) / 8, 4);  // (Sample Rate * BitsPerSample * Channels) / 8
+    write_word( f,      2, 2 );  // data block size (size of two integer samples, one for each channel, in bytes)
+    write_word( f,     8, 2 );  // number of bits per sample (use a multiple of 8)
 
     // Write the data chunk header
     size_t data_chunk_pos = f.tellp();
     f << "data----";  // (chunk size to be filled in later)
 
+
+    // 8bit pcm is always unsigned but
+
     for (int n = 0; n < size; n++)
     {
-        write_word( f, buffer[n], 4 );
+        write_word( f, buffer[n], 2);
     }
 
     // (We'll need the final file size to fix the chunk sizes above)

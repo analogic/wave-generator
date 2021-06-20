@@ -3,9 +3,9 @@
 #include <cmath>
 
 #define LUT_SIZE 512 // lookup table size
-#define SAMPLE_RATE 33333
+#define SAMPLE_RATE 16666
 
-static int16_t LUT[LUT_SIZE];
+static uint8_t LUT[LUT_SIZE];
 float phase = 0.0f; // phase accumulator
 
 void lut_pregenerate()
@@ -13,11 +13,11 @@ void lut_pregenerate()
     // first we need to generate a sine wave LUT:
     for (int i = 0; i < LUT_SIZE; ++i)
     {
-        LUT[i] = (int16_t)roundf(SHRT_MAX * sinf(2.0f * M_PI * (float)i / LUT_SIZE));
+        LUT[i] = (uint8_t)roundf(INT8_MAX * (sinf(2.0f * M_PI * (float)i / LUT_SIZE) + (float)1));
     }
 }
 
-void lut_tone(uint32_t *buffer, uint16_t size, uint16_t frequency, uint8_t volume)
+void lut_tone(uint16_t *buffer, uint16_t size, uint16_t frequency, uint8_t volume)
 {
     // NRF52 I2S should consist of L+R channel, int16(?) encoded
 
@@ -29,10 +29,10 @@ void lut_tone(uint32_t *buffer, uint16_t size, uint16_t frequency, uint8_t volum
     {
         int phase_i = (int)phase ; // get integer part of our phase
 
-        int16_t sample = LUT[phase_i] * volume_multiplicator; // get sample value from LUT
+        int8_t sample = LUT[phase_i] * volume_multiplicator; // get sample value from LUT
 
-        ((int16_t *)buffer)[2 * i] = sample;
-        ((int16_t *)buffer)[2 * i + 1] = 0;
+        ((uint8_t *)buffer)[2 * i] = sample;
+        ((uint8_t *)buffer)[2 * i + 1] = 128;
 
         //printf("0x%" PRIXPTR "\n", (uintptr_t)&data_buffer[buffer_index][0]);
 
@@ -42,32 +42,32 @@ void lut_tone(uint32_t *buffer, uint16_t size, uint16_t frequency, uint8_t volum
     }
 }
 
-void lut_square_tone(uint32_t *buffer, uint16_t size, uint16_t frequency, uint8_t volume)
+void lut_square_tone(uint16_t *buffer, uint16_t size, uint16_t frequency, uint8_t volume)
 {
     // NRF52 I2S should consist of L+R channel, int16(?) encoded
 
     const float delta_phi = (float)frequency / SAMPLE_RATE * LUT_SIZE;
     const float volume_multiplicator = (float)volume / 255;
 
-    const int16_t max = INT16_MAX / 8;
+    const uint8_t max = INT8_MAX / 4;
 
     // generate buffer of output
     for (int i = 0; i < size; ++i)
     {
         int phase_i = (int)phase ; // get integer part of our phase
 
-        int16_t sample = LUT[phase_i] * volume_multiplicator; // get sample value from LUT
+        uint8_t sample = LUT[phase_i] * volume_multiplicator; // get sample value from LUT
 
         // I know know, its just fastest solution
-        if (sample > max) {
-            ((int16_t *)buffer)[2 * i] = INT16_MAX;
-        } else if (sample < -max) {
-            ((int16_t *)buffer)[2 * i] = INT16_MIN;
+        if (sample > max + 128) {
+            ((uint8_t *)buffer)[2 * i] = UINT8_MAX;
+        } else if (sample < 128 - max) {
+            ((uint8_t *)buffer)[2 * i] = 0;
         } else {
-            ((int16_t *)buffer)[2 * i] = sample * 8;
+            ((uint8_t *)buffer)[2 * i] = (uint8_t)((sample - 128) * 4 + 128);
         }
 
-        ((int16_t *)buffer)[2 * i + 1] = 0;
+        ((uint8_t *)buffer)[2 * i + 1] = 128;
 
         //printf("0x%" PRIXPTR "\n", (uintptr_t)&data_buffer[buffer_index][0]);
 
@@ -77,7 +77,7 @@ void lut_square_tone(uint32_t *buffer, uint16_t size, uint16_t frequency, uint8_
     }
 }
 
-void lut_transform(uint32_t *buffer, uint16_t size, uint16_t frequency_from, uint16_t frequency_to, uint8_t volume) {
+void lut_transform(uint16_t *buffer, uint16_t size, uint16_t frequency_from, uint16_t frequency_to, uint8_t volume) {
     const float delta_phi = (float)frequency_from / SAMPLE_RATE * LUT_SIZE;
     const float target_delta_phi = (float)frequency_to / SAMPLE_RATE * LUT_SIZE;
 
@@ -88,10 +88,10 @@ void lut_transform(uint32_t *buffer, uint16_t size, uint16_t frequency_from, uin
     for (int i = 0; i < size; ++i)
     {
         int phase_i = (int)phase ;     // get integer part of our phase
-        int16_t sample = LUT[phase_i] * volume_multiplicator;       // get sample value from LUT
+        uint8_t sample = (LUT[phase_i] - 128) * volume_multiplicator;       // get sample value from LUT
 
-        ((int16_t *)buffer)[2 * i] = sample;
-        ((int16_t *)buffer)[2 * i + 1] = 0;
+        ((uint8_t *)buffer)[2 * i] = sample + 128;
+        ((uint8_t *)buffer)[2 * i + 1] = 128;
 
         phase += delta_phi + increment * i;           // increment phase
         if (phase >= (float)LUT_SIZE) // handle wraparound
@@ -101,7 +101,7 @@ void lut_transform(uint32_t *buffer, uint16_t size, uint16_t frequency_from, uin
     }
 }
 
-void lut_adjust_volume(uint32_t *buffer, uint16_t size, uint8_t volume_from, uint8_t volume_to)
+void lut_adjust_volume(uint16_t *buffer, uint16_t size, uint8_t volume_from, uint8_t volume_to)
 {
     const float from = (float)volume_from / 256;
     const float to = (float)volume_to / 256;
@@ -111,8 +111,8 @@ void lut_adjust_volume(uint32_t *buffer, uint16_t size, uint8_t volume_from, uin
     for (int i = 0; i < size; ++i)
     {
         //printf("%d => ", (int16_t)buffer[i]);
-        ((int16_t *)buffer)[2 * i] *= (from + i * increment);
-        ((int16_t *)buffer)[2 * i + 1] *= (from + i * increment);
+        ((uint8_t *)buffer)[2 * i] = (((uint8_t *)buffer)[2 * i] - 128) * (from  + i * increment) + 128;
+        //((uint8_t *)buffer)[2 * i + 1] = 0;
         //printf("%d\n", (int16_t)buffer[i]);
     }
 }
