@@ -12,7 +12,7 @@ do
   export source=$(basename $f)
   export code=$(cat $f | sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g; s/"/\&quot;/g; s/'"'"'/\&#39;/g')
 
-  g++ -I./src/ ./src/lut.cpp ./src/wav.cpp $f -o tmp/${source}
+  g++ -I./src/ ./src/wave-generator.cpp $f -o tmp/${source}
   ./tmp/${source} docs/${source}.wav > tmp/${source}.data
   gnuplot -e "set terminal png size 2500,250; set output 'docs/${source}.png'; plot 'tmp/${source}.data' with lines"
 

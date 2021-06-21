@@ -32,197 +32,248 @@
     <div class="container">
         <br />
         <p>
-        Simple LUT(lookup table) MCU friendly library for generating waves. Main target is generating sound for NRF52 via I2S amplifier but given a nature of library it should work as hardware independent in more generic projects. Right now whole code is fixed to sample rate 16.6Khz, we use left channel only and 8 bit sample width. Please do not use it as dependency (it might change in breaking way) just copy this library and adjust code as you need.
+        Simple LUT(lookup table) MCU friendly library for generating waves. Main target is generating sound for NRF52 via I2S amplifier but given a nature of library it should work as hardware independent in more generic projects. Please do not use it as dependency (it might change in breaking way) just copy or fork this library and adjust code as you need.
         </p>
 
          <div class="example">
-    <h1>Example frequency.cpp</h1>
+    <h1>Example adjust-volume.cpp</h1>
     <div class="content">
-        <img src="frequency.cpp.png" style="width: 100%;"/>
+        <img src="adjust-volume.cpp.png" style="width: 100%;"/>
         <audio controls>
-            <source src="frequency.cpp.wav" type="audio/wav">
-        </audio>
-        <pre><code>// Smooth frequency change
-
-#include &lt;cstdio&gt;
-#include &lt;cstring&gt;
-#include &lt;lut.h&gt;
-
-#define BUFF_SIZE 16384
-#define TONE_A4 440
-#define TONE_A6 1760
-
-extern void write_as_wav(uint16_t *buffer, uint32_t size, char *path);
-
-int main(int argc, char** argv)
-{
-    lut_pregenerate();
-    static uint16_t buff[BUFF_SIZE];                // output buffer
-    memset(&amp;buff[0], (uint8_t)128, BUFF_SIZE * 2);  // we set midpoint 128 (silence) since 8bit PCM is encoded as unsigned
-
-    lut_transform(&amp;buff[0], BUFF_SIZE, TONE_A4, TONE_A6, 255);
-
-    for(int i = 0; i &lt; BUFF_SIZE; i++) {
-        printf(&quot;%d\t%d\n&quot;, i, ((uint8_t *)buff)[i * 2]);
-    }
-
-    if (argc &gt; 1) {
-        write_as_wav(&amp;buff[0], BUFF_SIZE, argv[1]);
-    }
-}</code></pre>
-    </div>
-</div> <div class="example">
-    <h1>Example sm-coin.cpp</h1>
-    <div class="content">
-        <img src="sm-coin.cpp.png" style="width: 100%;"/>
-        <audio controls>
-            <source src="sm-coin.cpp.wav" type="audio/wav">
-        </audio>
-        <pre><code>// Generated Super Mario coin sound effect
-
-#include &lt;cstdio&gt;
-#include &lt;cstring&gt;
-#include &lt;lut.h&gt;
-
-#define BUFF_SIZE 16666
-#define ZERO_TRANSITION 100
-
-extern void write_as_wav(uint16_t *buffer, uint32_t size, char *path);
-
-int main(int argc, char** argv)
-{
-    lut_pregenerate();
-    static uint16_t buff[BUFF_SIZE];                // output buffer
-    memset(&amp;buff[0], (uint8_t)128, BUFF_SIZE * 2);  // we set midpoint 128 (silence) since 8bit PCM is encoded as unsigned
-
-    lut_square_tone(&amp;buff[0], BUFF_SIZE / 10, 988, 255);
-    lut_square_tone(&amp;buff[BUFF_SIZE / 10], BUFF_SIZE / 10 * 7, 1319, 255);
-
-    lut_adjust_volume(&amp;buff[0], ZERO_TRANSITION, 0, 255);
-    lut_adjust_volume(&amp;buff[BUFF_SIZE / 10], BUFF_SIZE / 10 * 7, 255, 0);
-
-    for(int i = 0; i &lt; BUFF_SIZE; i++) {
-        printf(&quot;%d\t%d\n&quot;, i, ((uint8_t *)buff)[i * 2]);
-    }
-
-    if (argc &gt; 1) {
-        write_as_wav(&amp;buff[0], BUFF_SIZE, argv[1]);
-    }
-}</code></pre>
-    </div>
-</div> <div class="example">
-    <h1>Example sm-kick.cpp</h1>
-    <div class="content">
-        <img src="sm-kick.cpp.png" style="width: 100%;"/>
-        <audio controls>
-            <source src="sm-kick.cpp.wav" type="audio/wav">
-        </audio>
-        <pre><code>// Generated Super Mario kick sound effect
-
-#include &lt;cstdio&gt;
-#include &lt;cstring&gt;
-#include &lt;lut.h&gt;
-
-#define BUFF_SIZE 16666 // same as sample rate
-
-extern void write_as_wav(uint16_t *buffer, uint32_t size, char *path);
-
-int main(int argc, char** argv)
-{
-    lut_pregenerate();
-    static uint16_t buff[BUFF_SIZE];                // output buffer
-    memset(&amp;buff[0], (uint8_t)128, BUFF_SIZE * 2);  // we set midpoint 128 (silence) since 8bit PCM is encoded as unsigned
-
-    int start = BUFF_SIZE/4; // 100ms
-    int slength = BUFF_SIZE/50; // 20ms
-    int sdelay = slength * 4; // 80ms
-
-    lut_square_tone(&amp;buff[start + BUFF_SIZE / 10], slength, 500, 255);
-    lut_square_tone(&amp;buff[start + BUFF_SIZE / 10] + slength + sdelay, slength, 693, 255);
-
-    for(int i = 0; i &lt; BUFF_SIZE; i++) {
-        printf(&quot;%d\t%d\n&quot;, i, ((uint8_t *)buff)[i * 2]);
-    }
-
-    if (argc &gt; 1) {
-        write_as_wav(&amp;buff[0], BUFF_SIZE, argv[1]);
-    }
-}</code></pre>
-    </div>
-</div> <div class="example">
-    <h1>Example tone.cpp</h1>
-    <div class="content">
-        <img src="tone.cpp.png" style="width: 100%;"/>
-        <audio controls>
-            <source src="tone.cpp.wav" type="audio/wav">
-        </audio>
-        <pre><code>// Simple tone generation, since lib save phase to the state internally there should be uninterrupted wave
-
-#include &lt;cstdio&gt;
-#include &lt;cstring&gt;
-#include &lt;lut.h&gt;
-
-#define BUFF_SIZE 4096
-#define TONE_A 440
-
-extern void write_as_wav(uint16_t *buffer, uint32_t size, char *path);
-
-int main(int argc, char** argv)
-{
-    lut_pregenerate();
-    static uint16_t buff[BUFF_SIZE];                // output buffer
-    memset(&amp;buff[0], (uint8_t)128, BUFF_SIZE * 2);  // we set midpoint 128 (silence) since 8bit PCM is encoded as unsigned
-
-    lut_tone(&amp;buff[0], 400, TONE_A, 255);
-    lut_tone(&amp;buff[400], BUFF_SIZE/4, TONE_A, 255);
-    lut_tone(&amp;buff[BUFF_SIZE/4 + 400], BUFF_SIZE/4, TONE_A, 255);
-    lut_tone(&amp;buff[BUFF_SIZE/4 * 2 + 400], BUFF_SIZE/4, TONE_A, 255);
-
-    for(int i = 0; i &lt; BUFF_SIZE; i++) {
-        printf(&quot;%d\t%d\n&quot;, i, ((uint8_t *)buff)[i * 2]);
-    }
-
-    if (argc &gt; 1) {
-        write_as_wav(&amp;buff[0], BUFF_SIZE, argv[1]);
-    }
-}</code></pre>
-    </div>
-</div> <div class="example">
-    <h1>Example volume.cpp</h1>
-    <div class="content">
-        <img src="volume.cpp.png" style="width: 100%;"/>
-        <audio controls>
-            <source src="volume.cpp.wav" type="audio/wav">
+            <source src="adjust-volume.cpp.wav" type="audio/wav">
         </audio>
         <pre><code>// Click-free wave - smooth transition from/to zero with volume adjustment function
 
 #include &lt;cstdio&gt;
 #include &lt;cstring&gt;
-#include &lt;lut.h&gt;
+#include &lt;wave-generator.h&gt;
 
-#define BUFF_SIZE 4096
+#define SAMPLE_RATE 44100
+#define SAMPLE_WIDTH 16
+
+#define BUFF_SIZE SAMPLE_RATE / 4
 #define TONE_A4 440
 #define TONE_A6 1760
 
-extern void write_as_wav(uint16_t *buffer, uint32_t size, char *path);
-
 int main(int argc, char** argv)
 {
-    lut_pregenerate();
-    static uint16_t buff[BUFF_SIZE];                // output buffer
-    memset(&amp;buff[0], (uint8_t)128, BUFF_SIZE * 2);  // we set midpoint 128 (silence) since 8bit PCM is encoded as unsigned
+    WaveGenerator wg(SAMPLE_RATE, SAMPLE_WIDTH, 1.0f);
 
-    lut_transform(&amp;buff[0], BUFF_SIZE, TONE_A4, TONE_A6, 255);
+    static uint32_t buff[BUFF_SIZE];                // output buffer
+    memset(&amp;buff[0], (uint32_t)0, BUFF_SIZE);  // we set midpoint 128 (silence) since 8bit PCM is encoded as unsigned
 
-    lut_adjust_volume(&amp;buff[0], BUFF_SIZE / 8, 0, 255);
-    lut_adjust_volume(&amp;buff[BUFF_SIZE - BUFF_SIZE / 8], BUFF_SIZE / 8, 255, 0);
+    wg.sineTransform(&amp;buff[0], BUFF_SIZE, TONE_A4, TONE_A6);
+
+    wg.adjustVolume(&amp;buff[0], wg.ms32size(50), 0, 255);
+    wg.adjustVolume(&amp;buff[BUFF_SIZE - wg.ms32size(50)], wg.ms32size(50), 255, 0);
 
     for(int i = 0; i &lt; BUFF_SIZE; i++) {
-        printf(&quot;%d\t%d\n&quot;, i, ((uint8_t *)buff)[i * 2]);
+        printf(&quot;%d\t%d\n&quot;, i, ((int16_t *)buff)[i * 2]);
     }
 
     if (argc &gt; 1) {
-        write_as_wav(&amp;buff[0], BUFF_SIZE, argv[1]);
+        wg.writeWav(&amp;buff[0], BUFF_SIZE, argv[1]);
+    }
+}</code></pre>
+    </div>
+</div> <div class="example">
+    <h1>Example adjust-volume-32bit.cpp</h1>
+    <div class="content">
+        <img src="adjust-volume-32bit.cpp.png" style="width: 100%;"/>
+        <audio controls>
+            <source src="adjust-volume-32bit.cpp.wav" type="audio/wav">
+        </audio>
+        <pre><code>// Click-free wave - smooth transition from/to zero with volume adjustment function, 32 bit sample width
+// (Firefox can&#39;t play 32 bit WAVs)
+
+#include &lt;cstdio&gt;
+#include &lt;cstring&gt;
+#include &lt;wave-generator.h&gt;
+
+#define SAMPLE_RATE 48000
+#define SAMPLE_WIDTH 32
+
+#define BUFF_SIZE SAMPLE_RATE / 2
+#define TONE_A4 440
+#define TONE_A6 1760
+
+int main(int argc, char** argv)
+{
+    WaveGenerator wg(SAMPLE_RATE, SAMPLE_WIDTH, 1.0f);
+
+    static uint32_t buff[BUFF_SIZE];           // output buffer
+    memset(&amp;buff[0], (int32_t)0, BUFF_SIZE);  // we set midpoint 128 (silence) since 8bit PCM is encoded as unsigned
+
+    wg.sineTransform(&amp;buff[0], BUFF_SIZE, TONE_A4, TONE_A6);
+
+    wg.adjustVolume(&amp;buff[0], wg.ms32size(50), 0, 255);
+    wg.adjustVolume(&amp;buff[BUFF_SIZE - wg.ms32size(50)], wg.ms32size(50), 255, 0);
+
+    for(int i = 0; i &lt; BUFF_SIZE / 2; i++) {
+        printf(&quot;%d\t%d\n&quot;, i, ((int32_t *)buff)[i * 2]);
+    }
+
+    if (argc &gt; 1) {
+        wg.writeWav(&amp;buff[0], BUFF_SIZE, argv[1]);
+    }
+}</code></pre>
+    </div>
+</div> <div class="example">
+    <h1>Example frequency-transform.cpp</h1>
+    <div class="content">
+        <img src="frequency-transform.cpp.png" style="width: 100%;"/>
+        <audio controls>
+            <source src="frequency-transform.cpp.wav" type="audio/wav">
+        </audio>
+        <pre><code>// Smooth frequency change
+
+#include &lt;cstdio&gt;
+#include &lt;cstring&gt;
+#include &lt;wave-generator.h&gt;
+
+#define SAMPLE_RATE 44100
+#define SAMPLE_WIDTH 16
+
+#define BUFF_SIZE SAMPLE_RATE / 2
+#define TONE_A4 440
+#define TONE_A6 1760
+
+int main(int argc, char** argv)
+{
+    WaveGenerator wg(SAMPLE_RATE, SAMPLE_WIDTH, 1.0f);
+
+    static uint32_t buff[BUFF_SIZE];                // output buffer
+    memset(&amp;buff[0], (uint32_t)0, BUFF_SIZE);  // we set midpoint 128 (silence) since 8bit PCM is encoded as unsigned
+
+    wg.sineTransform(&amp;buff[0], BUFF_SIZE, TONE_A4, TONE_A6);
+
+    for(int i = 0; i &lt; BUFF_SIZE; i++) {
+        printf(&quot;%d\t%d\n&quot;, i, ((int16_t *)buff)[i * 2]);
+    }
+
+    if (argc &gt; 1) {
+        wg.writeWav(&amp;buff[0], BUFF_SIZE, argv[1]);
+    }
+}</code></pre>
+    </div>
+</div> <div class="example">
+    <h1>Example simple-tone.cpp</h1>
+    <div class="content">
+        <img src="simple-tone.cpp.png" style="width: 100%;"/>
+        <audio controls>
+            <source src="simple-tone.cpp.wav" type="audio/wav">
+        </audio>
+        <pre><code>// Simple tone generation, since lib save phase to the state internally there should be uninterrupted wave
+
+#include &lt;cstdio&gt;
+#include &lt;cstring&gt;
+#include &lt;wave-generator.h&gt;
+
+#define SAMPLE_RATE 44100
+#define SAMPLE_WIDTH 16
+
+#define BUFF_SIZE SAMPLE_RATE // two channels
+#define TONE_A 440
+
+int main(int argc, char** argv)
+{
+    WaveGenerator wg(SAMPLE_RATE, SAMPLE_WIDTH, 1.0f);
+
+    static uint32_t buff[BUFF_SIZE];
+    memset(&amp;buff[0], (uint16_t)0, BUFF_SIZE * 2);
+
+    wg.sine(&amp;buff[0], wg.ms32size(250), TONE_A);
+    wg.sine(&amp;buff[wg.ms32size(250)], wg.ms32size(250), TONE_A);
+    wg.sine(&amp;buff[wg.ms32size(500)], wg.ms32size(250), TONE_A);
+
+    for(int i = 0; i &lt; BUFF_SIZE; i++) {
+        printf(&quot;%d\t%d\n&quot;, i, ((int16_t *)buff)[i * 2]);
+    }
+
+    if (argc &gt; 1) {
+        wg.writeWav(&amp;buff[0], BUFF_SIZE, argv[1]);
+    }
+}</code></pre>
+    </div>
+</div> <div class="example">
+    <h1>Example super-mario-coin.cpp</h1>
+    <div class="content">
+        <img src="super-mario-coin.cpp.png" style="width: 100%;"/>
+        <audio controls>
+            <source src="super-mario-coin.cpp.wav" type="audio/wav">
+        </audio>
+        <pre><code>// Generated Super Mario coin sound effect
+
+#include &lt;cstdio&gt;
+#include &lt;cstring&gt;
+#include &lt;wave-generator.h&gt;
+
+#define SAMPLE_RATE 44100
+#define SAMPLE_WIDTH 16
+
+#define BUFF_SIZE SAMPLE_RATE // our buffer is int32, so 16bit*2
+#define ZERO_TRANSITION 100
+
+int main(int argc, char** argv)
+{
+    WaveGenerator wg(SAMPLE_RATE, SAMPLE_WIDTH, 1.0f);
+
+    static uint32_t buff[BUFF_SIZE];                // output buffer
+    memset(&amp;buff[0], (uint32_t)0, BUFF_SIZE);  // we set midpoint 128 (silence) since 8bit PCM is encoded as unsigned
+
+    wg.square(&amp;buff[0], wg.ms32size(100), 988);
+    wg.square(&amp;buff[wg.ms32size(100)], wg.ms32size(800), 1319);
+
+    wg.adjustVolume(&amp;buff[0], ZERO_TRANSITION, 0, 255);
+    wg.adjustVolume(&amp;buff[BUFF_SIZE / 10], wg.ms32size(800), 255, 0);
+
+    for(int i = 0; i &lt; BUFF_SIZE; i++) {
+        printf(&quot;%d\t%d\n&quot;, i, ((int16_t *)buff)[i * 2]);
+    }
+
+    if (argc &gt; 1) {
+        wg.writeWav(&amp;buff[0], BUFF_SIZE, argv[1]);
+    }
+}</code></pre>
+    </div>
+</div> <div class="example">
+    <h1>Example super-mario-kick.cpp</h1>
+    <div class="content">
+        <img src="super-mario-kick.cpp.png" style="width: 100%;"/>
+        <audio controls>
+            <source src="super-mario-kick.cpp.wav" type="audio/wav">
+        </audio>
+        <pre><code>// Generated Super Mario kick sound effect
+
+#include &lt;cstdio&gt;
+#include &lt;cstring&gt;
+#include &lt;wave-generator.h&gt;
+
+#define SAMPLE_RATE 44100
+#define SAMPLE_WIDTH 16
+
+#define BUFF_SIZE SAMPLE_RATE
+
+int main(int argc, char** argv)
+{
+    WaveGenerator wg(SAMPLE_RATE, SAMPLE_WIDTH, 1.0f);
+
+    static uint32_t buff[BUFF_SIZE];                // output buffer
+    memset(&amp;buff[0], (uint32_t)0, BUFF_SIZE);  // we set midpoint 128 (silence) since 8bit PCM is encoded as unsigned
+
+    int start = wg.ms32size(100);
+    int slength = wg.ms32size(20); // 20ms
+    int sdelay = wg.ms32size(80); // 80ms
+
+    wg.square(&amp;buff[start], slength, 500);
+    wg.square(&amp;buff[start + slength] + sdelay, slength, 693);
+
+    for(int i = 0; i &lt; BUFF_SIZE; i++) {
+        printf(&quot;%d\t%d\n&quot;, i, ((int16_t *)buff)[i * 2]);
+    }
+
+    if (argc &gt; 1) {
+        wg.writeWav(&amp;buff[0], BUFF_SIZE, argv[1]);
     }
 }</code></pre>
     </div>
