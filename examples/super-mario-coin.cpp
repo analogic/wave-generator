@@ -20,8 +20,8 @@ int main(int argc, char** argv)
     wg.square(&buff[0], wg.ms32size(100), 988);
     wg.square(&buff[wg.ms32size(100)], wg.ms32size(800), 1319);
 
-    wg.adjustVolume(&buff[0], ZERO_TRANSITION, 0, 255);
-    wg.adjustVolume(&buff[BUFF_SIZE / 10], wg.ms32size(800), 255, 0);
+    wg.adjustVolume(&buff[0], ZERO_TRANSITION, 0.0f, 1.0f);
+    wg.adjustVolume(&buff[BUFF_SIZE / 10], wg.ms32size(800), 1.0f, 0.0f);
 
     for(int i = 0; i < BUFF_SIZE; i++) {
         printf("%d\t%d\n", i, ((int16_t *)buff)[i * 2]);

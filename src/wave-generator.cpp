@@ -10,6 +10,7 @@ WaveGenerator::WaveGenerator(uint16_t sampleRate, uint8_t sampleWidth, float vol
 
     this->sampleWidth = sampleWidth;
     this->sampleRate = sampleRate;
+    this->volume = volume;
 
     // first we need to generate a sine wave LUT:
     this->max = 32767 * volume;
@@ -41,16 +42,17 @@ uint32_t WaveGenerator::ms32size(uint32_t ms) {
 
 void WaveGenerator::sine(uint32_t *buffer, uint32_t size, uint16_t frequency) {
     // NRF52 I2S should consist of L+R channel, int16/int32(?) encoded
-    const float delta_phi = (float) frequency / this->sampleRate * LUT_SIZE / 2;
+    const float delta_phi = (float) frequency / this->sampleRate * LUT_SIZE;
 
     if (this->sampleWidth == 32) size /= 2;
     for (int i = 0; i < size; ++i) {
         int phase_i = (int) this->phase; // get integer part of our phase
 
         if (this->sampleWidth == 32) {
-            ((int32_t *) buffer)[2 * i] = ((int32_t *) buffer)[2 * i + 1] = this->LUT[phase_i];
+            ((int32_t *) buffer)[2 * i] = ((int32_t *) buffer)[2 * i + 1] = frequency != 0 ? this->LUT[phase_i] : 0;
         } else if (this->sampleWidth == 16) {
-            ((int16_t *) buffer)[2 * i] = ((int16_t *) buffer)[2 * i + 1] = (short) this->LUT[phase_i];
+            ((int16_t *) buffer)[2 * i] = ((int16_t *) buffer)[2 * i + 1] =
+                    frequency != 0 ? (short) this->LUT[phase_i] : 0;
         }
 
         this->phase += delta_phi; // increment phase
@@ -120,9 +122,9 @@ void WaveGenerator::sineTransform(uint32_t *buffer, uint32_t size, uint16_t freq
     }
 }
 
-void WaveGenerator::adjustVolume(uint32_t *buffer, uint32_t size, uint8_t volume_from, uint8_t volume_to) {
-    const float from = (float) volume_from / 256;
-    const float to = (float) volume_to / 256;
+void WaveGenerator::adjustVolume(uint32_t *buffer, uint32_t size, float volume_from, float volume_to) {
+    const float from = volume_from;
+    const float to = volume_to;
 
     if (this->sampleWidth == 32) size /= 2;
     const float increment = (to - from) / (float) size;
@@ -134,11 +136,13 @@ void WaveGenerator::adjustVolume(uint32_t *buffer, uint32_t size, uint8_t volume
                     (from + i * increment);
         } else if (this->sampleWidth == 16) {
             ((int16_t *) buffer)[2 * i] =
-                    ((int16_t *) buffer)[2 * i + 1] =
-                            (int16_t) (
-                                    (float) ((int16_t *) buffer)[2 * i] *
-                                    (from + i * increment)
-                            );
+                    (int16_t) (
+                            (float) (
+                                    (int16_t *) buffer
+                            )[2 * i] * (from + i * increment)
+                    );
+
+            ((int16_t *) buffer)[2 * i + 1] = ((int16_t *) buffer)[2 * i];
         }
     }
 }

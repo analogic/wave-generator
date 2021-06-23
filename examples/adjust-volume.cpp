@@ -21,7 +21,7 @@ int main(int argc, char** argv)
     wg.sineTransform(&buff[0], BUFF_SIZE, TONE_A4, TONE_A6);
 
     wg.adjustVolume(&buff[0], wg.ms32size(50), 0, 255);
-    wg.adjustVolume(&buff[BUFF_SIZE - wg.ms32size(50)], wg.ms32size(50), 255, 0);
+    wg.adjustVolume(&buff[BUFF_SIZE - wg.ms32size(50)], wg.ms32size(50), 1.0f, 0.0f);
 
     for(int i = 0; i < BUFF_SIZE; i++) {
         printf("%d\t%d\n", i, ((int16_t *)buff)[i * 2]);
